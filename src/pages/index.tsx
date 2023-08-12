@@ -1,17 +1,38 @@
 import Head from "next/head";
 import Link from "next/link";
 import { api } from "~/utils/api";
-import { SignIn} from "@clerk/nextjs";
+
 import { useUser } from "@clerk/nextjs";
 
 import { SignInButton, SignOutButton } from "@clerk/nextjs";
+
+
+
+const CreatePostWizard = () => {
+  const { user } = useUser();
+
+  
+
+  if(!user) return null
+
+  return( 
+    <div className="flex bg-black w-full gap-3"><img src={user.imageUrl} alt="profile pic" className="h-14 w-14 rounded-full" />
+    <input placeholder="ednej" type="text" className="bg-transparent"/>
+    </div>
+  )
+
+ 
+  } 
 export default function Home() {
   
  const user = useUser()
 
- const {data} = api.post.getAll.useQuery()
+  const { data, isLoading } = api.posts.getAll.useQuery()
 
- 
+  if(isLoading) return <div>...Loading</div>
+
+  if(!data) return <div>OOPs</div>
+
   return (
     <>
       <Head>
@@ -20,10 +41,21 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c]">
-        <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 ">
-     {!user.isSignedIn &&  <SignInButton/>} {!!user.isSignedIn && <SignOutButton/>} 
-     <SignIn />
-      
+        <div className="w-full border-x-3 border-slate-200 md:max-w-2xl bg-red-500">
+        <div>
+        {!user.isSignedIn &&  (
+          <div className="flex justify-center">
+            <SignInButton/>
+          </div>
+        )
+        
+        }
+     {!!user.isSignedIn && <SignOutButton/>}
+     {user.isSignedIn && <CreatePostWizard />} 
+        </div>
+        <div>
+           {[...data, ...data]?.map((post)=>(<div key={post.id} className="border-b p-8">{post.content}</div>))}
+        </div>
         </div>
       </main>
     </>
