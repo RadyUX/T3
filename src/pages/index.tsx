@@ -1,13 +1,23 @@
 import Head from "next/head";
 import Link from "next/link";
-import { api } from "~/utils/api";
+import { RouterOutputs, api } from "~/utils/api";
 
 import { useUser } from "@clerk/nextjs";
 
 import { SignInButton, SignOutButton } from "@clerk/nextjs";
+import { Spinner } from "~/components/loading";
 
+type PostWithUser = RouterOutputs["posts"]["getAll"][number]
 
+const PostView = (props: PostWithUser) =>{
+  const {post, author} = props
 
+return <div key={post.authorId} className="border-b p-8">
+  <img src={author?.profilePicture} alt="" />
+  <span>{author?.name}</span>
+  {post.content}</div>
+
+}
 const CreatePostWizard = () => {
   const { user } = useUser();
 
@@ -29,7 +39,7 @@ export default function Home() {
 
   const { data, isLoading } = api.posts.getAll.useQuery()
 
-  if(isLoading) return <div>...Loading</div>
+  if(isLoading) return <Spinner/>
 
   if(!data) return <div>OOPs</div>
 
@@ -54,7 +64,8 @@ export default function Home() {
      {user.isSignedIn && <CreatePostWizard />} 
         </div>
         <div>
-           {[...data, ...data]?.map((post)=>(<div key={post.id} className="border-b p-8">{post.content}</div>))}
+           {[...data, ...data]?.map((fullPost)=>(
+           <PostView {...fullPost} key={fullPost.post.authorId}/>))}
         </div>
         </div>
       </main>
