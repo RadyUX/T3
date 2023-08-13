@@ -3,19 +3,27 @@ import Link from "next/link";
 import { RouterOutputs, api } from "~/utils/api";
 
 import { useUser } from "@clerk/nextjs";
-
 import { SignInButton, SignOutButton } from "@clerk/nextjs";
 import { Spinner } from "~/components/loading";
 
+import Image from "next/image";
 type PostWithUser = RouterOutputs["posts"]["getAll"][number]
 
-const PostView = (props: PostWithUser) =>{
-  const {post, author} = props
 
-return <div key={post.authorId} className="border-b p-8">
-  <img src={author?.profilePicture} alt="" />
-  <span>{author?.name}</span>
-  {post.content}</div>
+const PostView = (props: PostWithUser) =>{
+  const { post, author } = props;
+  return (
+    <div key={post.id} className="flex gap-3 border-b border-slate-400 p-4">
+      <div className="flex flex-col">
+        <div className="flex gap-1 text-slate-300">
+          <Link href={`/@${author.username}`}>
+            <span>{`@${author.username} `}</span>
+          </Link>
+        </div>
+        <span className="text-2xl">{post.content}</span>
+      </div>
+    </div>
+  );
 
 }
 const CreatePostWizard = () => {
@@ -33,15 +41,41 @@ const CreatePostWizard = () => {
 
  
   } 
+
+
+
+  const Feed = () =>{
+    const { data, isLoading: postsLoading } = api.posts.getAll.useQuery();
+  
+    if (postsLoading)
+      return (
+        <div className="flex grow">
+          <Spinner />
+        </div>
+      );
+  
+    if (!data) return <div>Something went wrong</div>;
+  
+    return (
+      <div className="flex grow flex-col overflow-y-scroll">
+        {[...data, ...data].map((fullPost) => (
+          <PostView {...fullPost} key={fullPost.post.id} />
+        ))}
+      </div>
+    );
+  }
+
 export default function Home() {
   
- const user = useUser()
+ const { isLoaded: userLoaded, isSignedIn } = useUser();
 
-  const { data, isLoading } = api.posts.getAll.useQuery()
+  // Start fetching asap
+  api.posts.getAll.useQuery();
 
-  if(isLoading) return <Spinner/>
+  // Return empty div if user isn't loaded
+  if (!userLoaded) return <div />;
 
-  if(!data) return <div>OOPs</div>
+                                                                                                                                    
 
   return (
     <>
@@ -53,19 +87,18 @@ export default function Home() {
       <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c]">
         <div className="w-full border-x-3 border-slate-200 md:max-w-2xl bg-red-500">
         <div>
-        {!user.isSignedIn &&  (
+        {!isSignedIn &&  (
           <div className="flex justify-center">
             <SignInButton/>
           </div>
         )
         
         }
-     {!!user.isSignedIn && <SignOutButton/>}
-     {user.isSignedIn && <CreatePostWizard />} 
+     <SignOutButton/>
+     {isSignedIn && <CreatePostWizard />} 
         </div>
         <div>
-           {[...data, ...data]?.map((fullPost)=>(
-           <PostView {...fullPost} key={fullPost.post.authorId}/>))}
+        <Feed/>
         </div>
         </div>
       </main>
