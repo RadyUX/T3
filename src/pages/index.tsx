@@ -1,12 +1,13 @@
 import Head from "next/head";
 import Link from "next/link";
 import { RouterOutputs, api } from "~/utils/api";
-
 import { useUser } from "@clerk/nextjs";
 import { SignInButton, SignOutButton } from "@clerk/nextjs";
 import { Spinner } from "~/components/loading";
-
+import { useState } from "react";
 import Image from "next/image";
+
+
 type PostWithUser = RouterOutputs["posts"]["getAll"][number]
 
 
@@ -28,14 +29,41 @@ const PostView = (props: PostWithUser) =>{
 }
 const CreatePostWizard = () => {
   const { user } = useUser();
+  const [input, setInput] = useState("");
 
-  
+  const ctx = api.useContext();
+
+  const { mutate, isLoading: isPosting } = api.posts.create.useMutation({
+    onSuccess: () => {
+      setInput("")
+      void ctx.posts.getAll.invalidate();
+    }
+  })
+
+
 
   if(!user) return null
 
   return( 
     <div className="flex bg-black w-full gap-3"><img src={user.imageUrl} alt="profile pic" className="h-14 w-14 rounded-full" />
-    <input placeholder="ednej" type="text" className="bg-transparent"/>
+      <input
+        placeholder="Type some emojis!"
+        className="grow bg-transparent outline-none"
+        type="text"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        disabled={isPosting}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (input !== "") {
+              mutate({ content: input });
+            }
+          }
+        }}
+        
+      />
+      <button onClick={() => mutate({ content: input})}>POST</button>
     </div>
   )
 
